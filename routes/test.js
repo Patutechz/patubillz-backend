@@ -18,7 +18,7 @@ router.post("/fund", fundWallet);
 router.post("/webhook/paystack", express.json({ type : "*/*" }) , fundWallet);
 
 // call back
-router.post("/callback/paystack", callback);
+router.get("/callback/paystack", callback);
 
 // verify a transaction
 router.get("/verify/:reference", verifyTransaction);
