@@ -4,6 +4,7 @@ const express = require("express");
 const {
   fundWallet,
   verifyTransaction,
+  callback,
 } = require("../controllers/testController");
 
 const router = express.Router();
@@ -11,8 +12,13 @@ const router = express.Router();
 // fund wallet
 router.post("/fund", fundWallet);
 
+
+
 // webhook
 router.post("/webhook/paystack", express.json({ type : "*/*" }) , fundWallet);
+
+// call back
+router.post("/callback/paystack", callback);
 
 // verify a transaction
 router.get("/verify/:reference", verifyTransaction);

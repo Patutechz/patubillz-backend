@@ -11,7 +11,12 @@ const fundWallet = async (req, res) => {
     const paystackAmount = amount * 100;
     const response = await axios.post(
       "https://api.paystack.co/transaction/initialize",
-      { email, amount: paystackAmount },
+      {
+        email,
+        amount: paystackAmount,
+        callback_url:
+          "https://patubillz-backend.onrender.com/api/test/callback/paystack",
+      },
       {
         headers: {
           Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
@@ -56,6 +61,45 @@ const webhook = async (req, res) => {
   }
 };
 
+const callback = async (req, res) => {
+  try {
+    const reference = req.query.reference;
+
+    const response = await axios.get(
+      `https://api.paystack.co/transaction/verify/${reference}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        },
+      }
+    );
+
+    const { status, data } = response.data;
+
+    if (status && data.status === "success") {
+      const email = data.customer.email;
+      const amount = data.amount / 100;
+
+      const user = await User.findOne({ email });
+      if (user) {
+        user.balance += amount;
+        await user.save();
+      }
+
+      return res.send(
+        `<h2>✅ Payment Successful</h2><p>₦${amount} has been added to your wallet.</p>`
+      );
+    } else {
+      return res.send(
+        "<h2>❌ Payment Verification Failed</h2><p>Please try again.</p>"
+      );
+    }
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    res.send("<h2>⚠️ Error verifying payment</h2>");
+  }
+};
+
 // verify transaction
 const verifyTransaction = async (req, res) => {
   try {
@@ -90,4 +134,4 @@ const verifyTransaction = async (req, res) => {
   }
 };
 
-module.exports = { fundWallet, webhook, verifyTransaction };
+module.exports = { fundWallet, webhook, callback, verifyTransaction };
